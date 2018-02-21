@@ -1,0 +1,33 @@
+---
+- hosts: all
+  become: true
+  handlers:
+
+    - name: start ntp
+      service:
+        name: ntpd
+        state: started
+        enabled: true
+
+  tasks:
+
+    - name: set selinux to permissive
+      selinux:
+        state: permissive
+        policy: targeted
+
+    - name: install ntp
+      yum:
+        name: ntp
+        state: present
+      notify:
+        - start ntp
+
+    - name: add cloudstack repository
+      yum_repository:
+        name: cloudstack
+        baseurl: http://cloudstack.apt-get.eu/centos/7/4.11/
+        description: official cloudstack repository
+        enabled: true
+        gpgcheck: no
+
