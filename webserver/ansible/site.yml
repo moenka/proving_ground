@@ -18,6 +18,26 @@
         - php-xml
         - php-pecl-zip
 
+    - name: import mariadb role
+      import_role:
+        name: bertvv.mariadb
+      vars:
+        mariadb_databases:
+          - name: wordpress
+        mariadb_root_password: insecure
+        mariadb_users:
+          - name: wordpress
+            password: wordpress
+            priv: '*.*:ALL,GRANT'
+
+    - name: create mysql client config for root
+      copy:
+        dest: /root/.my.cnf
+        content: |
+          [client]
+          user=root
+          password=insecure
+
     - name: enable acmetool repository
       yum_repository:
         name: acmetool
@@ -30,4 +50,15 @@
       yum:
         name: acmetool
         state: present
+
+    - name: copy httpd wordpress config
+      command: cp /vagrant/templates/etc--httpd--conf.d--wordpress.conf /etc/httpd/conf.d/wordpress.conf
+
+    - name: copy wordpress config
+      command: cp /vagrant/templates/var--www--html--htdocs--wordpress--public--wp-config.php /var/www/html/htdocs/wordpress/public/wp-config.php
+
+    - name: restart httpd
+      service:
+        name: httpd
+        state: restarted
 
