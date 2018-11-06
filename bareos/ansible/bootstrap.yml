@@ -1,0 +1,75 @@
+---
+
+- hosts: all
+  become: true
+  gather_facts: no
+  name: Bootstrap remote redhat systems
+  tasks:
+
+    - name: Install python
+      raw: 'yum -y install python'
+      register: install
+      changed_when:
+        - not install.stdout is search('Nothing to do')
+        - not install.stdout is search('command not found')
+
+    - name: Install epel-release
+      yum:
+        name: epel-release
+        state: present
+
+    - name: Install dependencies
+      yum:
+        name: [
+          'ca-certificates',
+          'python-pip',
+        ]
+        state: present
+
+- hosts: all
+  become: true
+  name: Setup basic node constraints
+  tasks:
+
+    - name: Set selinux config to permissive
+      selinux:
+        state: permissive
+        policy: targeted
+
+    - name: Set selinux live to permissive
+      command: '/usr/sbin/setenforce 0'
+
+    - name: Set timezone
+      timezone:
+        name: Europe/Berlin
+
+    - name: Install basic packages
+      yum:
+        name: [
+          'bash-completion',
+          'curl',
+          'git',
+          'htop',
+          'libselinux-python',
+          'mlocate',
+          'screen',
+          'vim',
+          'wget',
+        ]
+        state: present
+        
+
+    - name: Update all packages
+      yum:
+        name: '*'
+        state: latest
+
+    - name: Import sshd role
+      import_role:
+        name: willshersystems.sshd
+
+    - name: Add /vagrant/bin directory to PATH
+      copy:
+        dest: /etc/environment
+        content: 'PATH=/vagrant/bin:/bin:/usr/bin:/usr/local/bin'
+

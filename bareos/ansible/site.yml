@@ -1,0 +1,20 @@
+---
+
+- hosts: all
+  become: true
+  tasks:
+
+    - name: Add bareos gpg key
+      rpm_key:
+        key: http://download.bareos.org/bareos/release/17.2/CentOS_7/repodata/repomd.xml.key
+        state: present
+
+    - name: Add bareos repository
+      yum_repository:
+        baseurl: http://download.bareos.org/bareos/release/17.2/CentOS_7/
+        description: bareos
+        enabled: yes
+        file: bareos
+        gpgcheck: yes
+        name: bareos
+

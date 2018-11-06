@@ -1,0 +1,61 @@
+---
+
+- hosts: all
+  become: true
+  tasks:
+
+    - name: Add bareos gpg key
+      rpm_key:
+        key: http://download.bareos.org/bareos/release/17.2/CentOS_7/repodata/repomd.xml.key
+        state: present
+
+    - name: Add bareos repository
+      yum_repository:
+        baseurl: http://download.bareos.org/bareos/release/17.2/CentOS_7/
+        description: bareos
+        enabled: yes
+        file: bareos
+        gpgcheck: yes
+        name: bareos
+
+    - name: Install bareos
+      yum:
+        name: [
+          'bareos',
+          'bareos-database-postgresql',
+          'postgresql-server',
+        ]
+        state: present
+
+    - name: Initialize postgresql database
+      become_user: postgres
+      command: /usr/bin/postgresql-setup initdb
+
+    - name: Start postgresql
+      service:
+        enabled: yes
+        name: postgresql
+        state: started
+
+    - name: Create bareos database
+      command: /usr/lib/bareos/scripts/create_bareos_database
+      become_user: postgres
+
+    - name: Make bareos tables
+      command: /usr/lib/bareos/scripts/make_bareos_tables
+      become_user: postgres
+      
+    - name: Grant bareos privileges
+      command: /usr/lib/bareos/scripts/grant_bareos_privileges
+      become_user: postgres
+
+    - name: Start bareos daemons
+      service:
+        enabled: yes
+        name: "{{ item }}"
+        state: started
+      with_items:
+        - bareos-dir
+        - bareos-sd
+        - bareos-fd
+
