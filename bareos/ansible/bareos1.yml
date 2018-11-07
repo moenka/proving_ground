@@ -23,6 +23,7 @@
         name: [
           'bareos',
           'bareos-database-postgresql',
+          'bareos-webui',
           'postgresql-server',
         ]
         state: present
@@ -49,6 +50,14 @@
       command: /usr/lib/bareos/scripts/grant_bareos_privileges
       become_user: postgres
 
+    - name: Create webui admin
+      template:
+        dest: /etc/bareos/bareos-dir.d/console/admin.conf
+        group: bareos
+        mode: 0640
+        owner: bareos
+        src: bareos-webui-admin.conf.j2
+
     - name: Start bareos daemons
       service:
         enabled: yes
@@ -58,4 +67,10 @@
         - bareos-dir
         - bareos-sd
         - bareos-fd
+
+    - name: Start the webserver for bareos webui
+      service:
+        enabled: yes
+        name: httpd
+        state: started
 
